@@ -1,0 +1,20 @@
+# Create a network
+docker network create app-net
+
+# Create a volume
+docker volume create db-vol
+
+# Create a Db
+docker run -d --name mydb \
+    --network app-net \
+    -v db-vol:/var/lib/mysql \
+    stackupiss/northwind-db:v1
+
+#Create the application
+docker run -d -p 8080:3000 \
+    --network app-net \
+    -e DB_HOST=mydb \
+    -e DB_USER=root \
+    -e DB_PASSWORD=changeit \
+    --name myapp \
+    stackupiss/northwind-app:v1
