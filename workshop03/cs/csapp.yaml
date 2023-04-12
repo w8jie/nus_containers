@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cs-deploy
+  namespace: csns
+  labels:
+    app: cs
+    name: cs-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cs
+      name: cs-po
+  template:
+    metadata:
+      name: cs-po
+      labels:
+        app: cs
+        name: cs-po
+    spec:
+      volumes:
+        - name: data-vol
+          persistentVolumeClaim:
+            claimName: cs-pvc
+      containers:
+        - name: cs-container
+          image: linuxserver/code-server:4.11.0
+          imagePullPolicy: IfNotPresent
+          envFrom:
+          - configMapRef:
+              name: cs-cm
+          - secretRef:
+              name: cs-secret
+          ports:
+          - containerPort: 8443
+          volumeMounts:
+          - name: data-vol 
+            mountPath: /config/workspace
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cs-svc
+  namespace: csns
+  labels:
+    app: cs
+    name: cs-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: cs
+    name: cs-po
+  ports:
+    - port: 8443
+      targetPort: 8443
+
+--- 
+apiVersion: networking.k8s.io/v1 
+kind: Ingress 
+metadata: 
+  name: cs-ing
+  namespace: csns 
+  labels: 
+    app: cs 
+    name: cs-ing
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: code-139.59.219.189.nip.io
+    http:
+      paths:
+      - path: / 
+        pathType: Prefix
+        backend: 
+          service:
+            name: cs-svc
+            port: 
+              number: 8443
