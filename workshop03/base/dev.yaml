@@ -1,0 +1,187 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"bgg","name":"bggapp-svc"},"name":"bggapp-svc","namespace":"bggns"},"spec":{"ports":[{"port":3000,"targetPort":3000}],"selector":{"app":"bgg","name":"bggapp-po"},"type":"LoadBalancer"}}
+      kubernetes.digitalocean.com/load-balancer-id: 0b68cf7b-2c58-4dd4-b51b-296722ca879d
+    creationTimestamp: "2023-04-11T07:36:28Z"
+    finalizers:
+    - service.kubernetes.io/load-balancer-cleanup
+    labels:
+      app: bgg
+      name: bggapp-svc
+    name: bggapp-svc
+    namespace: bggns
+    resourceVersion: "88186"
+    uid: 912718a4-e2d5-4cc4-8c67-4fd42035ea5e
+  spec:
+    allocateLoadBalancerNodePorts: true
+    clusterIP: 10.245.73.145
+    clusterIPs:
+    - 10.245.73.145
+    externalTrafficPolicy: Cluster
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - nodePort: 32238
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+    selector:
+      app: bgg
+      name: bggapp-po
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 188.166.206.7
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"bgg","name":"bgg-svc"},"name":"bgg-svc","namespace":"default"},"spec":{"ports":[{"port":3306,"targetPort":3306}],"selector":{"app":"bgg","name":"bggdb-po"},"type":"ClusterIP"}}
+    labels:
+      app: bgg
+      name: bgg-svc
+    name: bgg-svc
+    namespace: default
+  spec:
+    ports:
+    - port: 3306
+      targetPort: 3306
+    selector:
+      app: bgg
+      name: bggdb-po
+    type: ClusterIP
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"bgg","name":"bggapp-deploy"},"name":"bggapp-deploy","namespace":"bggns"},"spec":{"replicas":3,"selector":{"matchLabels":{"app":"bgg","name":"bggapp-po"}},"template":{"metadata":{"labels":{"app":"bgg","name":"bggapp-po"},"name":"bggapp-po"},"spec":{"containers":[{"envFrom":[{"configMapRef":{"name":"bgg-cm"}},{"secretRef":{"name":"bgg-secret"}}],"image":"stackupiss/bgg-backend:v1","imagePullPolicy":"IfNotPresent","livenessProbe":{"httpGet":{"path":"/healthz","port":3000}},"name":"bggapp-container","ports":[{"containerPort":3000}],"readinessProbe":{"httpGet":{"path":"/healthz","port":3000}}}]}}}}
+    creationTimestamp: "2023-04-11T07:33:00Z"
+    generation: 1
+    labels:
+      app: bgg
+      name: bggapp-deploy
+    name: bggapp-deploy
+    namespace: bggns
+    resourceVersion: "89161"
+    uid: 339bc559-45ff-4805-862d-3f9dddb02cf8
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 3
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: bgg
+        name: bggapp-po
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: bgg
+          name: bggapp-po
+        name: bggapp-po
+      spec:
+        containers:
+        - envFrom:
+          - configMapRef:
+              name: bgg-cm
+          - secretRef:
+              name: bgg-secret
+          image: stackupiss/bgg-backend:v1
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 3000
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: bggapp-container
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 3000
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    conditions:
+    - lastTransitionTime: "2023-04-11T07:33:00Z"
+      lastUpdateTime: "2023-04-11T07:33:00Z"
+      message: Deployment does not have minimum availability.
+      reason: MinimumReplicasUnavailable
+      status: "False"
+      type: Available
+    - lastTransitionTime: "2023-04-11T07:43:01Z"
+      lastUpdateTime: "2023-04-11T07:43:01Z"
+      message: ReplicaSet "bggapp-deploy-686b7d94c7" has timed out progressing.
+      reason: ProgressDeadlineExceeded
+      status: "False"
+      type: Progressing
+    observedGeneration: 1
+    replicas: 3
+    unavailableReplicas: 3
+    updatedReplicas: 3
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"bgg","name":"bggdb-deploy"},"name":"bggdb-deploy","namespace":"bggns"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"bgg","name":"bggdb-po"}},"template":{"metadata":{"labels":{"app":"bgg","name":"bggdb-po"},"name":"bggdb-po"},"spec":{"containers":[{"image":"stackupiss/bgg-database:v1","imagePullPolicy":"IfNotPresent","name":"bgg-container","ports":[{"containerPort":3306}]}]}}}}
+    labels:
+      app: bgg
+      name: bggdb-deploy
+    name: bggdb-deploy
+    namespace: bggns
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: bgg
+        name: bggdb-po
+    template:
+      metadata:
+        labels:
+          app: bgg
+          name: bggdb-po
+        name: bggdb-po
+      spec:
+        containers:
+        - image: stackupiss/bgg-database:v1
+          imagePullPolicy: IfNotPresent
+          name: bgg-container
+          ports:
+          - containerPort: 3306
+kind: List
+metadata: {}
